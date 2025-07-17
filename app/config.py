@@ -19,7 +19,7 @@ class Settings(BaseSettings):
 
     BASE_URL: str
 
-    DB_URL: str = 'postgresql+asyncpg://anton:anton_pass@localhost/maindb'
+    DB_URL: str = 'postgresql+asyncpg://anton:anton_pass@localhost/imei'
 
     model_config = SettingsConfigDict(env_file=f"{BASE_DIR}/.env")
 
