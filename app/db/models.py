@@ -35,11 +35,12 @@ class DeviceInfo(Base):
         "SoldetDevice", back_populates="device_info"
     )  
 
+
 class RegisteredDevice(Base):
     __tablename__ = "registered_devices"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    imei: Mapped[str] = mapped_column(String, nullable=False)
+    imei: Mapped[str] = mapped_column(String, nullable=False, unique=True)  # Добавлено unique=True
     jan: Mapped[str] = mapped_column(String, ForeignKey("device_info.jan"), nullable=False)
     
     accepted_by_id: Mapped[int | None] = mapped_column(BigInteger, ForeignKey("users.id"), nullable=True)
