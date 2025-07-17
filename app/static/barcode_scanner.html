@@ -1,0 +1,126 @@
+﻿<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" href="data:,">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Тест сканера штрихкода</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script src="https://unpkg.com/@zxing/library@latest"></script>
+  <style>
+    body {
+      font-family: sans-serif;
+      text-align: center;
+      padding: 1rem;
+      background: #f9f9f9;
+    }
+
+    video {
+      width: 100%;
+      max-width: 400px;
+      border-radius: 12px;
+      margin-bottom: 1rem;
+    }
+
+    #status {
+      font-weight: bold;
+      color: #333;
+    }
+  </style>
+</head>
+
+<body>
+  <h2>Тест сканера штрихкода</h2>
+  <video id="preview" autoplay muted playsinline></video>
+  <div id="status">Запуск...</div>
+
+  <script>
+    if (!window.Telegram || !window.Telegram.WebApp) {
+      alert("Ошибка: Telegram WebApp API не доступен.");
+    } else {
+      window.Telegram.WebApp.ready();
+
+      function getChatIdFromUrl() {
+        const params = new URLSearchParams(window.location.search);
+        return params.get("chat_id");
+      }
+
+      function getBaseUrlFromUrl() {
+        const params = new URLSearchParams(window.location.search);
+        return params.get("base_url");
+      }
+
+      const chat_id = getChatIdFromUrl();
+      const base_url = getBaseUrlFromUrl();
+      const status = document.getElementById('status');
+      const hints = new Map();
+      hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS, [
+        ZXing.BarcodeFormat.EAN_13,
+        ZXing.BarcodeFormat.CODE_128,
+        ZXing.BarcodeFormat.UPC_A,
+        ZXing.BarcodeFormat.UPC_E,
+        ZXing.BarcodeFormat.EAN_8,
+      ]);
+      const codeReader = new ZXing.BrowserMultiFormatReader(hints);
+      let scanned = false; // 🔒 Предотвращаем повтор
+
+      codeReader.listVideoInputDevices()
+        .then(devices => {
+          if (devices.length === 0) {
+            status.textContent = "❌ Камера не найдена.";
+            alert("Камера не найдена");
+            return;
+          }
+
+          status.textContent = "📷 Камера активна. Наведите на штрихкод.";
+
+          codeReader.decodeFromVideoDevice(null, 'preview', async (result, err) => {
+            if (scanned) return; // ⚠️ уже отправлено, выходим
+            if (result) {
+              scanned = true;
+              const barcode = result.getText();
+              status.textContent = `✅ Найден код: ${barcode}`;
+              alert("Считан штрихкод: " + barcode + "\nChat ID: " + chat_id);
+
+              try {
+                const response = await fetch(`${base_url}/send_barcode`, {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    barcode: barcode,
+                    chat_id: parseInt(chat_id, 10)
+                  })
+                });
+
+                if (!response.ok) {
+                  throw new Error("Ошибка при отправке штрихкода на сервер");
+                }
+
+                // ✅ Закрываем WebApp
+                window.Telegram.WebApp.close();
+
+              } catch (e) {
+                alert("Ошибка при отправке штрихкода:\n" + e.message);
+                console.error(e);
+                scanned = false; // ❌ можно повторить попытку
+              }
+
+              await codeReader.reset(); // 🧹 Очистка сканера
+            } else if (err && !(err instanceof ZXing.NotFoundException)) {
+              status.textContent = "Ошибка сканера: " + err;
+              alert("Ошибка сканера: " + err);
+            } else {
+              status.textContent = "Ожидание штрихкода...";
+            }
+          });
+        })
+        .catch(err => {
+          status.textContent = "Ошибка запуска камеры: " + err.message;
+          alert("Ошибка запуска камеры:\n" + err.message);
+        });
+    }
+  </script>
+</body>
+
+</html>
