@@ -13,7 +13,6 @@ from app.db.dao import DeviceInfoDAO, RegisteredDeviceDAO
 from app.db.schemas import SDeviceInfo, SRegisteredDevice
 from app.mongo import mongo_client
 from loguru import logger
-from datetime import datetime
 
 check_invoice_router = Router()
 

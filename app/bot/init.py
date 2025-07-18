@@ -25,8 +25,7 @@ from loguru import logger
 from app.config import settings
 from app.bot.routers.setup import setup_router
 from app.mongo import MongoClient
-
-mongo_client = MongoClient(settings.MONGO_URL)
+from app.mongo import mongo_client
 
 storage = None
 bot = None
