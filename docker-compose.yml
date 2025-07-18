@@ -24,11 +24,11 @@
     volumes:
       - mongodb_data:/data/db
     healthcheck:
-      test: ["mongo", "--eval", "db.runCommand({ ping: 1 }).ok", "--username", "admin", "--password", "password", "--host", "localhost", "--port", "27017"]
+      test: ["CMD", "/usr/bin/mongo", "--eval", "db.runCommand({ ping: 1 }).ok", "--username", "admin", "--password", "password", "--host", "localhost", "--port", "27017"]
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 30s 
+      start_period: 30s
 
 volumes:
   mongodb_data:
