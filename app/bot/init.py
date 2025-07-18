@@ -22,7 +22,7 @@ from app.config import settings
 from app.bot.routers.setup import setup_router
 from app.mongo import mongo_client
 
-storage = MongoStorage(mongo_client.client, database="invoices", collection="states")
+storage = MongoStorage(mongo_client.client, db_name="invoices", collection="states")
 
 bot = Bot(
     token=settings.BOT_TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML),
