@@ -1,8 +1,4 @@
-﻿from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorCollection
-from app.config import settings
-from typing import List, Optional, Dict
-from datetime import datetime
-import uuid
+﻿from app.config import settings
 from contextlib import asynccontextmanager
 import os
 
@@ -24,7 +20,6 @@ setup_logger("bot")
 from loguru import logger
 from app.config import settings
 from app.bot.routers.setup import setup_router
-from app.mongo import MongoClient
 from app.mongo import mongo_client
 
 storage = None
@@ -33,9 +28,7 @@ dp = None
 
 async def start_bot():
     global storage, bot, dp
-    # Подключаемся к MongoDB
     await mongo_client.connect()
-    # Инициализируем storage после подключения
     storage = MongoStorage(mongo_client.client)
     bot = Bot(
         token=settings.BOT_TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML),

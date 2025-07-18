@@ -237,6 +237,7 @@ async def continue_invoice(callback: CallbackQuery, state: FSMContext):
 async def accept_unit(message: Message, state: FSMContext, session_without_commit: AsyncSession):
     """Принимает IMEI/JAN и обновляет сверку."""
     data = await state.get_data()
+    logger.info(data)
     items = data.get("items", [])
     idx = data.get("current_index", 0)
     invoice_id = data.get("invoice_id")
@@ -255,58 +256,58 @@ async def accept_unit(message: Message, state: FSMContext, session_without_commi
 
     item_name = items[idx]["item"]["name"]
     try:
-        async with session_without_commit.begin():  # Транзакция
-            if is_valid_imei(code):
-                items[idx]["imei"] = code
-                imea_exists = await session_without_commit.scalar(
-                    select(RegisteredDevice).where(RegisteredDevice.imei == items[idx]["imei"])
-                )
-                if imea_exists:
-                    await message.answer("Этот IMEI уже есть в базе данных, попробуйте другой")
-                    return
-                await message.answer(f"IMEI принят для:\n<b>{item_name}</b>", parse_mode="HTML")
-            elif is_valid_jan(code):
-                jan_exists = await session_without_commit.scalar(
-                    select(DeviceInfo).where(DeviceInfo.jan == code)
-                )
-                items[idx]["jan"] = code
-                if not jan_exists:
-                    await message.answer(
-                        f"JAN <b>{code}</b> не найден в базе.\nПожалуйста, введите название устройства:",
-                        parse_mode="HTML",
-                    )
-                    await state.set_state(AddDeviceStates.device_name)
-                    return
-                await message.answer(f"JAN принят для:\n<b>{item_name}</b>", parse_mode="HTML")
-            else:
-                await message.answer("❌ Не удалось определить тип кода. Введите IMEI или JAN.")
+        if is_valid_imei(code):
+            items[idx]["imei"] = code
+            imea_exists = await session_without_commit.scalar(
+                select(RegisteredDevice).where(RegisteredDevice.imei == items[idx]["imei"])
+            )
+            if imea_exists:
+                await message.answer("Этот IMEI уже есть в базе данных, попробуйте другой")
                 return
+            await message.answer(f"IMEI принят для:\n<b>{item_name}</b>", parse_mode="HTML")
+        elif is_valid_jan(code):
+            jan_exists = await session_without_commit.scalar(
+                select(DeviceInfo).where(DeviceInfo.jan == code)
+            )
+            items[idx]["jan"] = code
+            if not jan_exists:
+                await message.answer(
+                    f"JAN <b>{code}</b> не найден в базе.\nПожалуйста, введите название устройства:",
+                    parse_mode="HTML",
+                )
+                await state.set_state(AddDeviceStates.device_name)
+                return
+            await message.answer(f"JAN принят для:\n<b>{item_name}</b>", parse_mode="HTML")
+        else:
+            await message.answer("❌ Не удалось определить тип кода. Введите IMEI или JAN.")
+            return
 
-            if items[idx]["imei"] and items[idx]["jan"]:
-                await RegisteredDeviceDAO(session_without_commit).add(SRegisteredDevice(
-                    imei=items[idx]["imei"],
-                    jan=items[idx]["jan"],
-                    accepted_by_id=message.from_user.id
-                ))
-                items[idx]["accepted"] = True
-                idx += 1
+        if items[idx]["imei"] and items[idx]["jan"]:
+            await RegisteredDeviceDAO(session_without_commit).add(SRegisteredDevice(
+                imei=items[idx]["imei"],
+                jan=items[idx]["jan"],
+                accepted_by_id=message.from_user.id
+            ))
+            items[idx]["accepted"] = True
+            idx += 1
+            if idx < len(items):
+                next_name = items[idx]["item"]["name"]
+                await message.answer(
+                    f"Позиция учтена. Следующая единица:\n<b>{next_name}</b>\nВведите IMEI или JAN для этой позиции.",
+                    reply_markup=create_scanner(message.from_user.id),
+                    parse_mode="HTML",
+                )
+            else:
+                await message.answer("✅ Все товары учтены! Спасибо.", reply_markup=MainKeyboard.build_keyboard())
+                if invoice_id:
+                    await mongo_client.delete_invoice(invoice_id)
+                await state.clear()
+                
     except Exception as e:
         logger.error(f"Ошибка транзакции для {item_name}: {e}")
         await message.answer("❌ Ошибка базы данных. Попробуйте позже.")
         return
 
-    if idx < len(items):
-        next_name = items[idx]["item"]["name"]
-        await message.answer(
-            f"Позиция учтена. Следующая единица:\n<b>{next_name}</b>\nВведите IMEI или JAN для этой позиции.",
-            reply_markup=create_scanner(message.from_user.id),
-            parse_mode="HTML",
-        )
-    else:
-        await message.answer("✅ Все товары учтены! Спасибо.", reply_markup=MainKeyboard.build_keyboard())
-        if invoice_id:
-            await mongo_client.delete_invoice(invoice_id)
-        await state.clear()
     await state.update_data(items=items, current_index=idx, invoice_id=invoice_id)
     if invoice_id:
         await mongo_client.update_invoice(invoice_id, items, idx, state="check")
