@@ -276,6 +276,7 @@ async def accept_unit(message: Message, state: FSMContext, session_without_commi
                     parse_mode="HTML",
                 )
                 await state.set_state(AddDeviceStates.device_name)
+                await state.update_data(items=items, current_index=idx, invoice_id=invoice_id)
                 return
             await message.answer(f"JAN принят для:\n<b>{item_name}</b>", parse_mode="HTML")
         else:
