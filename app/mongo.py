@@ -74,3 +74,4 @@ class MongoClient:
         """
         await self.invoices.delete_one({"invoice_id": invoice_id})
 
+mongo_client = MongoClient(settings.MONGO_URL)

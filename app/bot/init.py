@@ -20,9 +20,8 @@ setup_logger("bot")
 from loguru import logger
 from app.config import settings
 from app.bot.routers.setup import setup_router
+from app.mongo import mongo_client
 
-
-mongo_client = MongoClient(settings.MONGO_URL)
 storage = MongoStorage(mongo_client.client, database="invoices", collection="states")
 
 bot = Bot(

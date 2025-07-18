@@ -11,7 +11,7 @@ from app.bot.common.kbds.markup.main_kb import MainKeyboard, create_scanner
 from app.db.models import DeviceInfo, RegisteredDevice
 from app.db.dao import DeviceInfoDAO, RegisteredDeviceDAO
 from app.db.schemas import SDeviceInfo, SRegisteredDevice
-from app.bot.init import mongo_client
+from app.mongo import mongo_client
 from loguru import logger
 from datetime import datetime
 
