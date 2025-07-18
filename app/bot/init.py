@@ -13,7 +13,6 @@ import time
 
 from app.bot.middlewares.database_middleware import DatabaseMiddlewareWithCommit, DatabaseMiddlewareWithoutCommit
 from app.config import setup_logger
-from app.mongo import MongoClient
 
 setup_logger("bot")
 
