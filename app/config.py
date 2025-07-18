@@ -19,7 +19,7 @@ class Settings(BaseSettings):
 
     BASE_URL: str
 
-    DB_URL: str = 'postgresql+asyncpg://admin:password@postgres:5432/imei'
+    DB_URL: str = 'postgresql+asyncpg://admin:password@185.198.152.192:5432/imei'
     MONGO_URL: str = 'mongodb://admin:password@mongodb:27017/invoices?authSource=admin'
     model_config = SettingsConfigDict(env_file=f"{BASE_DIR}/.env")
 
