@@ -1,17 +1,15 @@
 ﻿services:
   app:
-    build:
-      context: .
+    image: yourusername/uchet_bot:latest
     ports:
       - "8000:8000"
     depends_on:
       mongodb:
-        condition: service_healthy  
+        condition: service_healthy
+    env_file:
+      - .env
     volumes:
       - .:/app
-    env_file:
-      - .env  
-    command: /bin/sh -c "alembic upgrade head && uvicorn app.bot.init:app --host 0.0.0.0 --port 8000"
 
   mongodb:
     image: mongo:6
@@ -23,10 +21,11 @@
     volumes:
       - mongodb_data:/data/db
     healthcheck:
-      test: ["CMD", "mongo", "--eval", "db.runCommand({ ping: 1 })"]
+      test: ["mongo", "--eval", "db.runCommand({ ping: 1 }).ok", "--username", "admin", "--password", "password", "--host", "localhost", "--port", "27017"]
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 30s 
 
 volumes:
   mongodb_data:
