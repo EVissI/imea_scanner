@@ -1,4 +1,9 @@
-﻿from contextlib import asynccontextmanager
+﻿from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorCollection
+from app.config import settings
+from typing import List, Optional, Dict
+from datetime import datetime
+import uuid
+from contextlib import asynccontextmanager
 import os
 
 from aiogram.client.default import DefaultBotProperties
@@ -19,19 +24,27 @@ setup_logger("bot")
 from loguru import logger
 from app.config import settings
 from app.bot.routers.setup import setup_router
-from app.mongo import mongo_client
+from app.mongo import MongoClient
 
-storage = MongoStorage(mongo_client.client)
+mongo_client = MongoClient(settings.MONGO_URL)
 
-bot = Bot(
-    token=settings.BOT_TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML),
-    storage=storage
-)
-admins = settings.ROOT_ADMIN_IDS
-dp = Dispatcher(storage=storage)
-
+storage = None
+bot = None
+dp = None
 
 async def start_bot():
+    global storage, bot, dp
+    # Подключаемся к MongoDB
+    await mongo_client.connect()
+    # Инициализируем storage после подключения
+    storage = MongoStorage(mongo_client.client)
+    bot = Bot(
+        token=settings.BOT_TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML),
+        storage=storage
+    )
+    dp = Dispatcher(storage=storage)
+
+    admins = settings.ROOT_ADMIN_IDS
     for admin_id in admins:
         try:
             await bot.send_message(admin_id, f"Я запущен🥳.")
@@ -39,16 +52,16 @@ async def start_bot():
             pass
     logger.info("Бот успешно запущен.")
 
-
 async def stop_bot():
+    global bot
     await mongo_client.close()
-    try:
-        for admin_id in admins:
-            await bot.send_message(admin_id, "Бот остановлен. За что?😔")
-    except:
-        pass
+    if bot:
+        try:
+            for admin_id in settings.ROOT_ADMIN_IDS:
+                await bot.send_message(admin_id, "Бот остановлен. За что?😔")
+        except:
+            pass
     logger.error("Бот остановлен!")
-
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -68,9 +81,7 @@ async def lifespan(app: FastAPI):
     logger.info("Бот остановлен...")
     await stop_bot()
 
-
 app = FastAPI(lifespan=lifespan)
-
 
 @app.post("/webhook")
 async def webhook(request: Request) -> None:
@@ -83,16 +94,13 @@ async def webhook(request: Request) -> None:
     except Exception as e:
         logger.error(f"Ошибка при обработке обновления с вебхука: {e}")
 
-
 static_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "static")
 logger.info(f"STATIC DIR: {static_dir}")
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
-
 class BarcodeData(BaseModel):
     barcode: str
     chat_id: int
-
 
 @app.post("/send_barcode")
 async def send_barcode(data: BarcodeData):
