@@ -5,9 +5,6 @@
       dockerfile: Dockerfile
     ports:
       - "8000:8000"
-    depends_on:
-      mongodb:
-        condition: service_healthy  
     volumes:
       - .:/app
     env_file:
@@ -23,12 +20,6 @@
       MONGO_INITDB_ROOT_PASSWORD: password
     volumes:
       - mongodb_data:/data/db
-    healthcheck:
-      test: ["CMD-SHELL", "mongo --eval 'db.runCommand({ ping: 1 }).ok' --username admin --password password --host localhost --port 27017"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
 
 volumes:
   mongodb_data:
