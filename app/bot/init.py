@@ -1,20 +1,19 @@
-﻿import asyncio
-from contextlib import asynccontextmanager
+﻿from contextlib import asynccontextmanager
 import os
 
 from aiogram.client.default import DefaultBotProperties
+from aiogram.fsm.storage.mongo import MongoStorage
 from aiogram.enums import ParseMode
 from aiogram.types import Update, Message, Chat, User
 from aiogram import Bot, Dispatcher
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
-import httpx
 import time
 
 from app.bot.middlewares.database_middleware import DatabaseMiddlewareWithCommit, DatabaseMiddlewareWithoutCommit
 from app.config import setup_logger
+from app.mongo import MongoClient
 
 setup_logger("bot")
 
@@ -22,11 +21,16 @@ from loguru import logger
 from app.config import settings
 from app.bot.routers.setup import setup_router
 
+
+mongo_client = MongoClient(settings.MONGO_URL)
+storage = MongoStorage(mongo_client.client, database="invoices", collection="states")
+
 bot = Bot(
-    token=settings.BOT_TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML)
+    token=settings.BOT_TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML),
+    storage=storage
 )
 admins = settings.ROOT_ADMIN_IDS
-dp = Dispatcher()
+dp = Dispatcher(storage=storage)
 
 
 async def start_bot():
@@ -39,6 +43,7 @@ async def start_bot():
 
 
 async def stop_bot():
+    await mongo_client.close()
     try:
         for admin_id in admins:
             await bot.send_message(admin_id, "Бот остановлен. За что?😔")
@@ -84,12 +89,6 @@ async def webhook(request: Request) -> None:
 static_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "static")
 logger.info(f"STATIC DIR: {static_dir}")
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
-
-# @app.get("/send_barcode", response_class=FileResponse)
-# async def barcode_page():
-#     static_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "static")
-#     file_path = os.path.join(static_dir, "barcode_scanner.html")
-#     return FileResponse(file_path)
 
 
 class BarcodeData(BaseModel):
