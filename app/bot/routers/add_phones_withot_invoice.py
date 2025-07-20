@@ -29,7 +29,7 @@ async def start_add_pair(message: Message, state: FSMContext):
     )
     await state.set_state(InputKeysState.input)
 
-@add_pair_router.message(F.text == "Закончить сверку", StateFilter(InputKeysState.input))
+@add_pair_router.message(F.text == "✅ Закончить сверку", StateFilter(InputKeysState.input))
 async def finish_add_pair(message: Message, state: FSMContext, session_without_commit: AsyncSession):
     await message.answer(text = message.text, reply_markup = MainKeyboard.build_keyboard())
     await state.clear()

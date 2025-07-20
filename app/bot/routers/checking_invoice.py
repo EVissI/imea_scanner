@@ -151,7 +151,7 @@ async def process_invoice(message: Message, state: FSMContext):
     await state.set_state(CheckInvoiceStates.check)
 
 
-@check_invoice_router.message(F.text == "Закончить сверку", StateFilter(CheckInvoiceStates.check))
+@check_invoice_router.message(F.text == "✅ Закончить сверку", StateFilter(CheckInvoiceStates.check))
 async def handle_finish_invoice(message: Message, state: FSMContext):
     """Показывает сводку неучтённых товаров и предлагает подтвердить завершение."""
     data = await state.get_data()
