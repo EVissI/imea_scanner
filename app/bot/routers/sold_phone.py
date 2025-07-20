@@ -23,7 +23,7 @@ class SoldPhoneState(StatesGroup):
 async def start_sold_phone(message: Message, state: FSMContext):
     await state.clear()
     await message.answer(
-        "Отправьте или отсканируйте IMEI устройства, которое вы хотите продать.\n",
+        "📷 Отправьте или отсканируйте IMEI устройства, которое вы хотите продать.\n",
         reply_markup=create_scanner_sold(message.from_user.id)
     )
     await state.set_state(SoldPhoneState.input)
@@ -37,16 +37,16 @@ async def back_to_menu(message: Message, state: FSMContext):
 async def input_sold_phone(message: Message, state: FSMContext, session_without_commit: AsyncSession):
     code = message.text.strip()
     if not is_valid_imei(code):
-        await message.answer("Пожалуйста, введите или отсканируйте IMEI устройства.")
+        await message.answer("❌Не верный формат❌")
         return
     imei_exists:RegisteredDevice = await session_without_commit.scalar(
             select(RegisteredDevice).where(RegisteredDevice.imei == code)
         )
     if not imei_exists:
         await state.clear()
-        await message.answer('IMEI не был найден в базе данных',reply_markup=MainKeyboard.build_keyboard())
+        await message.answer('❌IMEI не был найден❌',reply_markup=MainKeyboard.build_keyboard())
         return
-    await message.answer('Введите сумму продажи')
+    await message.answer('💸Введите сумму продажи')
     await state.update_data(imei = code)
     await state.update_data(jan = imei_exists.jan)
     await state.set_state(SoldPhoneState.price)
@@ -58,7 +58,7 @@ async def input_sold_phone(message: Message, state: FSMContext, session_without_
     data = await state.get_data()
     imei = data.get('imei')
     jan = data.get('jan')
-    await message.answer(f'IMEI: {imei}\nЦена продажи: {sold_price}',
+    await message.answer(f'💾IMEI: {imei}\n💸Цена продажи: {sold_price}',
                         reply_markup=build_confim_sold_kb(imei, 
                                                           jan,
                                                           sold_price))
@@ -75,9 +75,9 @@ async def process_confirm(callback:CallbackQuery, callback_data:SoldConfirmCallb
             sold_by_id=callback.from_user.id
         )
     )
-    await callback.message.answer('Продажа добавлена',reply_markup=MainKeyboard.build_keyboard())
+    await callback.message.answer('✔Продажа добавлена',reply_markup=MainKeyboard.build_keyboard())
 
 @sold_router.callback_query(SoldConfirmCallback.filter(F.action == 'cancel'))
 async def process_cancel(callback:CallbackQuery):
     await callback.message.delete()
-    await callback.message.answer('Продажа отменена',reply_markup=MainKeyboard.build_keyboard())
+    await callback.message.answer('❌Продажа отменена',reply_markup=MainKeyboard.build_keyboard())

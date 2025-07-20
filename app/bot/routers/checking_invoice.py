@@ -40,12 +40,12 @@ async def check_invoice(message: Message, state: FSMContext):
 
     if invoices:
         await message.answer(
-            "У вас есть незавершённые сверки. Выберите одну или начните новую:",
+            "📋 У вас есть незавершённые сверки. Выберите одну или начните новую: ✨",
             reply_markup=create_invoice_selection_keyboard(invoices),
         )
         await state.set_state(CheckInvoiceStates.select_invoice)
     else:
-        await message.answer("Пожалуйста, отправьте накладную")
+        await message.answer("📝 Пожалуйста, отправьте накладную")
         await state.set_state(CheckInvoiceStates.invoice)
 
 
@@ -53,7 +53,7 @@ async def check_invoice(message: Message, state: FSMContext):
 async def start_new_invoice(callback: CallbackQuery, state: FSMContext):
     """Обрабатывает нажатие кнопки 'Новая сверка'."""
     await callback.message.answer(
-        "Пожалуйста, отправьте накладную для новой сверки",
+        "📝 Пожалуйста, отправьте накладную для новой сверки",
         reply_markup=MainKeyboard.build_keyboard()
     )
     await state.clear()  
@@ -76,7 +76,7 @@ async def select_invoice(callback: CallbackQuery, state: FSMContext):
 
     if not invoice:
         await callback.message.answer(
-            "❌ Сверка не найдена. Начните новую.",
+            "❌ Сверка не найдена. Начните новую. ✨",
             reply_markup=MainKeyboard.build_keyboard()
         )
         await state.clear()
@@ -88,7 +88,7 @@ async def select_invoice(callback: CallbackQuery, state: FSMContext):
 
     if current_index >= len(items):
         await callback.message.answer(
-            "✅ Все товары учтены! Сверка завершена.",
+            "✅ Все товары учтены! Сверка завершена. 🎉",
             reply_markup=MainKeyboard.build_keyboard()
         )
         await mongo_client.delete_invoice(invoice_id)
@@ -96,8 +96,8 @@ async def select_invoice(callback: CallbackQuery, state: FSMContext):
     else:
         next_name = items[current_index]["item"]["name"]
         await callback.message.answer(
-            f"Продолжайте сверку.\nСледующая единица:\n<b>{next_name}</b>\n"
-            f"Введите IMEI или JAN для этой позиции.",
+            f"📋 Продолжайте сверку.\nСледующая единица:\n<b>{next_name}</b>\n"
+            f"📲 Введите IMEI или JAN для этой позиции.",
             reply_markup=create_scanner(callback.from_user.id),
             parse_mode="HTML",
         )
@@ -109,7 +109,7 @@ async def select_invoice(callback: CallbackQuery, state: FSMContext):
 async def process_invoice(message: Message, state: FSMContext):
     """Обрабатывает отправку накладной и сохраняет её."""
     if not message.text or len(message.text.strip()) < 10:  # Простая валидация
-        await message.answer("❌ Накладная слишком короткая. Проверьте формат.",reply_markup=MainKeyboard.build_keyboard())
+        await message.answer("❌ Накладная слишком короткая. Проверьте формат.", reply_markup=MainKeyboard.build_keyboard())
         await state.clear()
         return
 
@@ -117,7 +117,7 @@ async def process_invoice(message: Message, state: FSMContext):
         result = parse_invoice(message.text)
     except Exception as e:
         logger.error(f"Ошибка парсинга накладной: {e}")
-        await message.answer("❌ Ошибка при парсинге. Проверьте формат.",reply_markup=MainKeyboard.build_keyboard())
+        await message.answer("❌ Ошибка при парсинге. Проверьте формат.", reply_markup=MainKeyboard.build_keyboard())
         await state.clear()
         return
 
@@ -126,7 +126,7 @@ async def process_invoice(message: Message, state: FSMContext):
             f"❌ Ошибка!\n"
             f"В накладной указано: {result['invoice_count']} шт., сумма {result['invoice_sum']}\n"
             f"Распознано: {result['parsed_count']} шт., сумма {result['parsed_sum']:.2f}\n"
-            f"Проверьте накладную и попробуйте снова.",reply_markup=MainKeyboard.build_keyboard()
+            f"📝 Проверьте накладную и попробуйте снова.", reply_markup=MainKeyboard.build_keyboard()
         )
         await state.clear()
         return
@@ -142,9 +142,9 @@ async def process_invoice(message: Message, state: FSMContext):
     await state.update_data(items=items, current_index=0, invoice_text=message.text, invoice_id=invoice_id)
     await message.answer(
         f"✅ Всё верно!\n"
-        f"Позиций: {result['parsed_count']}\n"
-        f"Сумма: {result['parsed_sum']:.2f}\n\n"
-        f"Теперь отсканируйте или введите IMEI или JAN для:\n<b>{items[0]['item']['name']}</b>",
+        f"📦 Позиций: {result['parsed_count']}\n"
+        f"💰 Сумма: {result['parsed_sum']:.2f}\n\n"
+        f"📲 Теперь отсканируйте или введите IMEI или JAN для:\n<b>{items[0]['item']['name']}</b>",
         reply_markup=create_scanner(message.from_user.id),
         parse_mode="HTML",
     )
@@ -164,14 +164,14 @@ async def handle_finish_invoice(message: Message, state: FSMContext):
     unaccepted_items = [item["item"]["name"] for item in items if not item["accepted"]]
     if not unaccepted_items:
         await message.answer(
-            "✅ Все товары учтены! Вы уверены, что хотите завершить сверку?",
+            "✅ Все товары учтены! Вы уверены, что хотите завершить сверку? 🎉",
             reply_markup=create_finish_confirmation_keyboard(),
         )
     else:
         unaccepted_text = "\n".join([f"- {name}" for name in unaccepted_items])
         await message.answer(
             f"⚠️ Есть неучтённые товары:\n{unaccepted_text}\n\n"
-            f"Вы уверены, что хотите завершить сверку?",
+            f"Вы уверены, что хотите завершить сверку? 🎉",
             reply_markup=create_finish_confirmation_keyboard(),
         )
 
@@ -198,7 +198,7 @@ async def confirm_finish_invoice(callback: CallbackQuery, state: FSMContext):
         return
 
     await callback.message.answer(
-        "✅ Сверка сохранена. Вы можете вернуться к ней позже.",
+        "✅ Сверка сохранена. Вы можете вернуться к ней позже. 🎉",
         reply_markup=MainKeyboard.build_keyboard()
     )
     await state.clear()
@@ -215,7 +215,7 @@ async def continue_invoice(callback: CallbackQuery, state: FSMContext):
 
     if current_index >= len(items):
         await callback.message.answer(
-            "✅ Все товары учтены! Сверка завершена.",
+            "✅ Все товары учтены! Сверка завершена. 🎉",
             reply_markup=MainKeyboard.build_keyboard()
         )
         if invoice_id:
@@ -224,8 +224,8 @@ async def continue_invoice(callback: CallbackQuery, state: FSMContext):
     else:
         next_name = items[current_index]["item"]["name"]
         await callback.message.answer(
-            f"Продолжайте сверку.\nСледующая единица:\n<b>{next_name}</b>\n"
-            f"Введите IMEI или JAN для этой позиции.",
+            f"📋 Продолжайте сверку.\nСледующая единица:\n<b>{next_name}</b>\n"
+            f"📲 Введите IMEI или JAN для этой позиции.",
             reply_markup=create_scanner(callback.from_user.id),
             parse_mode="HTML",
         )
@@ -243,7 +243,7 @@ async def accept_unit(message: Message, state: FSMContext, session_without_commi
     invoice_id = data.get("invoice_id")
 
     if idx >= len(items):
-        await message.answer("✅ Все товары учтены! Спасибо.", reply_markup=MainKeyboard.build_keyboard())
+        await message.answer("✅ Все товары учтены! Спасибо. 🎉", reply_markup=MainKeyboard.build_keyboard())
         if invoice_id:
             await mongo_client.delete_invoice(invoice_id)
         await state.clear()
@@ -262,9 +262,9 @@ async def accept_unit(message: Message, state: FSMContext, session_without_commi
                 select(RegisteredDevice).where(RegisteredDevice.imei == items[idx]["imei"])
             )
             if imea_exists:
-                await message.answer("Этот IMEI уже есть в базе данных, попробуйте другой")
+                await message.answer("❌ Этот IMEI уже есть в базе данных, попробуйте другой")
                 return
-            await message.answer(f"IMEI принят для:\n<b>{item_name}</b>", parse_mode="HTML")
+            await message.answer(f"✅ IMEI принят для:\n<b>{item_name}</b>", parse_mode="HTML")
         elif is_valid_barcode(code):
             jan_exists = await session_without_commit.scalar(
                 select(DeviceInfo).where(DeviceInfo.jan == code)
@@ -272,13 +272,13 @@ async def accept_unit(message: Message, state: FSMContext, session_without_commi
             items[idx]["jan"] = code
             if not jan_exists:
                 await message.answer(
-                    f"JAN <b>{code}</b> не найден в базе.\nПожалуйста, введите название устройства:",
+                    f"❓ JAN <b>{code}</b> не найден в базе.\n📝 Пожалуйста, введите название устройства:",
                     parse_mode="HTML",
                 )
                 await state.set_state(AddDeviceStates.device_name)
                 await state.update_data(items=items, current_index=idx, invoice_id=invoice_id)
                 return
-            await message.answer(f"JAN принят для:\n<b>{item_name}</b>", parse_mode="HTML")
+            await message.answer(f"✅ JAN принят для:\n<b>{item_name}</b>", parse_mode="HTML")
         else:
             await message.answer("❌ Не удалось определить тип кода. Введите IMEI или JAN.")
             return
@@ -294,12 +294,13 @@ async def accept_unit(message: Message, state: FSMContext, session_without_commi
             if idx < len(items):
                 next_name = items[idx]["item"]["name"]
                 await message.answer(
-                    f"Позиция учтена. Следующая единица:\n<b>{next_name}</b>\nВведите IMEI или JAN для этой позиции.",
+                    f"🎉 Позиция учтена. Следующая единица:\n<b>{next_name}</b>\n"
+                    f"📲 Введите IMEI или JAN для этой позиции.",
                     reply_markup=create_scanner(message.from_user.id),
                     parse_mode="HTML",
                 )
             else:
-                await message.answer("✅ Все товары учтены! Спасибо.", reply_markup=MainKeyboard.build_keyboard())
+                await message.answer("✅ Все товары учтены! Спасибо. 🎉", reply_markup=MainKeyboard.build_keyboard())
                 if invoice_id:
                     await mongo_client.delete_invoice(invoice_id)
                 await state.clear()
@@ -341,14 +342,14 @@ async def add_device_memory(message: Message, state: FSMContext, session_without
                     accepted_by_id=message.from_user.id
                 ))
                 await message.answer(
-                    f"Информация о девайсе с JAN <b>{jan}</b> успешно добавлена!\n"
-                    f"Пара IMEI-JAN успешно сохранена!\n\n",
+                    f"🎉 Информация о девайсе с JAN <b>{jan}</b> успешно добавлена!\n"
+                    f"🎉 Пара IMEI-JAN успешно сохранена!\n\n",
                     parse_mode="HTML",
                 )
             else:
                 await message.answer(
-                    f"Информация о девайсе с JAN <b>{jan}</b> успешно добавлена!\n"
-                    f"Введите IMEI для этой пары.",
+                    f"🎉 Информация о девайсе с JAN <b>{jan}</b> успешно добавлена!\n"
+                    f"📲 Введите IMEI для этой пары.",
                     parse_mode="HTML",
                 )
     except Exception as e:
