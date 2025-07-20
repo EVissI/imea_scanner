@@ -33,18 +33,21 @@
 
 <body>
   <h2>Тест сканера штрихкода</h2>
-  <video id="preview" autoplay muted playsinline></video>
-  <div style="
-    position: absolute;
-    top: 20%;
-    left: 10%;
-    right: 10%;
-    bottom: 20%;
-    border: 2px dashed #0f0;
-    border-radius: 8px;
-    pointer-events: none;
-    z-index: 10;
-  "></div>
+  <div id="scanner-container" style="position: relative; display: inline-block; max-width: 400px;">
+    <video id="preview" autoplay muted playsinline></video>
+
+    <div style="
+      position: absolute;
+      top: 20%;
+      left: 10%;
+      right: 10%;
+      bottom: 20%;
+      border: 2px dashed #0f0;
+      border-radius: 8px;
+      pointer-events: none;
+      z-index: 10;
+    "></div>
+  </div>
   <div id="status">Запуск...</div>
 
   <script>
