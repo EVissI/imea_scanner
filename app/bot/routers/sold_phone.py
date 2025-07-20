@@ -28,7 +28,7 @@ async def start_sold_phone(message: Message, state: FSMContext):
     )
     await state.set_state(SoldPhoneState.input)
 
-@sold_router.message(F.text == "Закончить сверку", StateFilter(SoldPhoneState.input))
+@sold_router.message(F.text == "Назад в меню", StateFilter(SoldPhoneState.input))
 async def back_to_menu(message: Message, state: FSMContext):
     await message.answer(text=message.text, reply_markup=MainKeyboard.build_keyboard())
     await state.clear()
