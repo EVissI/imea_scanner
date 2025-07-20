@@ -64,7 +64,7 @@ async def input_keys(message: Message, state: FSMContext, session_without_commit
             return
     else:
         await message.answer(
-            "❌ Не удалось определить тип кода. Введите IMEI (15 цифр) или JAN (13 цифр).",
+            "❌ Не удалось определить тип кода.",
             reply_markup=create_scanner(message.from_user.id)
         )
         return
