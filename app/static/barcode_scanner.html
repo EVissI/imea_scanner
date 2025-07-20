@@ -14,14 +14,38 @@
       text-align: center;
       padding: 1rem;
       background: #f9f9f9;
+    }
+
+    #scanner-container {
       position: relative;
+      display: inline-block;
+      max-width: 400px;
+      min-height: 300px; /* Минимальная высота для отображения рамки */
     }
 
     video {
       width: 100%;
-      max-width: 400px;
+      height: auto;
       border-radius: 12px;
       margin-bottom: 1rem;
+    }
+
+    #scan-frame {
+      position: absolute;
+      top: 20%;
+      left: 10%;
+      right: 10%;
+      bottom: 20%;
+      border: 2px dashed #0f0;
+      border-radius: 8px;
+      pointer-events: none;
+      z-index: 10;
+      box-sizing: border-box;
+      display: none; /* Скрыто по умолчанию */
+    }
+
+    #scanner-container.active #scan-frame {
+      display: block; /* Показываем рамку при активации */
     }
 
     #status {
@@ -33,20 +57,9 @@
 
 <body>
   <h2>Тест сканера штрихкода</h2>
-  <div id="scanner-container" style="position: relative; display: inline-block; max-width: 400px;">
+  <div id="scanner-container">
     <video id="preview" autoplay muted playsinline></video>
-
-    <div style="
-      position: absolute;
-      top: 20%;
-      left: 10%;
-      right: 10%;
-      bottom: 20%;
-      border: 2px dashed #0f0;
-      border-radius: 8px;
-      pointer-events: none;
-      z-index: 10;
-    "></div>
+    <div id="scan-frame"></div>
   </div>
   <div id="status">Запуск...</div>
 
@@ -69,6 +82,7 @@
       const chat_id = getChatIdFromUrl();
       const base_url = getBaseUrlFromUrl();
       const status = document.getElementById('status');
+      const scannerContainer = document.getElementById('scanner-container');
       const hints = new Map();
       hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS, [
         ZXing.BarcodeFormat.UPC_A,
@@ -81,7 +95,7 @@
         ZXing.BarcodeFormat.PDF_417
       ]);
       const codeReader = new ZXing.BrowserMultiFormatReader(hints);
-      let scanned = false; // 🔒 Предотвращаем повтор
+      let scanned = false;
 
       codeReader.listVideoInputDevices()
         .then(devices => {
@@ -92,9 +106,10 @@
           }
 
           status.textContent = "📷 Камера активна. Наведите на штрихкод.";
+          scannerContainer.classList.add('active'); // Активируем контейнер и рамку
 
           codeReader.decodeFromVideoDevice(null, 'preview', async (result, err) => {
-            if (scanned) return; // ⚠️ уже отправлено, выходим
+            if (scanned) return;
             if (result) {
               scanned = true;
               const barcode = result.getText();
@@ -115,16 +130,15 @@
                   throw new Error("Ошибка при отправке штрихкода на сервер");
                 }
 
-                // ✅ Закрываем WebApp
                 window.Telegram.WebApp.close();
 
               } catch (e) {
                 alert("Ошибка при отправке штрихкода:\n" + e.message);
                 console.error(e);
-                scanned = false; // ❌ можно повторить попытку
+                scanned = false;
               }
 
-              await codeReader.reset(); // 🧹 Очистка сканера
+              await codeReader.reset();
             } else if (err && !(err instanceof ZXing.NotFoundException)) {
               status.textContent = "Ошибка сканера: " + err;
               alert("Ошибка сканера: " + err);
