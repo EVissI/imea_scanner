@@ -6,13 +6,13 @@ def create_scanner(user_id: int) -> ReplyKeyboardMarkup:
     builder = ReplyKeyboardBuilder()
     builder.add(
         KeyboardButton(
-            text="Сканировать штрихкод",
+            text="📷 Сканировать штрихкод",
             web_app=WebAppInfo(url=f"{settings.BASE_URL}/static/barcode_scanner.html?chat_id={user_id}&base_url={settings.BASE_URL}")
         ),
     )
     builder.add(
         KeyboardButton(
-            text="Закончить сверку",
+            text="✅ Закончить сверку",
         )
     )
     builder.adjust(1)
@@ -22,14 +22,13 @@ def create_scanner_sold(user_id: int) -> ReplyKeyboardMarkup:
     builder = ReplyKeyboardBuilder()
     builder.add(
         KeyboardButton(
-            text="Сканировать штрихкод",
+            text="📷 Сканировать штрихкод",
             web_app=WebAppInfo(url=f"{settings.BASE_URL}/static/barcode_scanner.html?chat_id={user_id}&base_url={settings.BASE_URL}")
-            # web_app=WebAppInfo(url=f"{settings.BASE_URL}/static/barcode_scanner.html?chat_id={user_id}&base_url={settings.BASE_URL}")
         ),
     )
     builder.add(
         KeyboardButton(
-            text="Назад в меню",
+            text="🔙 Назад в меню",
         )
     )
     builder.adjust(1)
@@ -37,10 +36,11 @@ def create_scanner_sold(user_id: int) -> ReplyKeyboardMarkup:
 
 class MainKeyboard:
     user_kbd_text = {
-        'invoice': 'Загрузить накладную',
-        'add_phone': 'Добавить ТМЦ',
-        'sold': 'Продать устройство',
+        'invoice': '📄 Загрузить накладную',
+        'add_phone': '➕ Добавить ТМЦ',
+        'sold': '💸 Продать устройство',
     }
+    
     @staticmethod
     def get_user_texts():
         return MainKeyboard.user_kbd_text

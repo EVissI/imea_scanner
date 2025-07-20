@@ -33,6 +33,17 @@
 <body>
   <h2>Тест сканера штрихкода</h2>
   <video id="preview" autoplay muted playsinline></video>
+  <div style="
+    position: absolute;
+    top: 20%;
+    left: 10%;
+    right: 10%;
+    bottom: 20%;
+    border: 2px dashed #0f0;
+    border-radius: 8px;
+    pointer-events: none;
+    z-index: 10;
+  "></div>
   <div id="status">Запуск...</div>
 
   <script>
@@ -56,11 +67,14 @@
       const status = document.getElementById('status');
       const hints = new Map();
       hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS, [
-        ZXing.BarcodeFormat.EAN_13,
-        ZXing.BarcodeFormat.CODE_128,
         ZXing.BarcodeFormat.UPC_A,
         ZXing.BarcodeFormat.UPC_E,
+        ZXing.BarcodeFormat.EAN_13,
         ZXing.BarcodeFormat.EAN_8,
+        ZXing.BarcodeFormat.CODE_128,
+        ZXing.BarcodeFormat.CODE_39,
+        ZXing.BarcodeFormat.QR_CODE,
+        ZXing.BarcodeFormat.PDF_417
       ]);
       const codeReader = new ZXing.BrowserMultiFormatReader(hints);
       let scanned = false; // 🔒 Предотвращаем повтор
