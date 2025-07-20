@@ -5,7 +5,7 @@ from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.context import FSMContext
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.bot.common.func import is_valid_imei, is_valid_jan, parse_invoice
+from app.bot.common.func import is_valid_imei, is_valid_barcode, parse_invoice
 from app.bot.common.kbds.inline.confirm_sold import create_finish_confirmation_keyboard, create_invoice_selection_keyboard
 from app.bot.common.kbds.markup.main_kb import MainKeyboard, create_scanner
 from app.db.models import DeviceInfo, RegisteredDevice
@@ -265,7 +265,7 @@ async def accept_unit(message: Message, state: FSMContext, session_without_commi
                 await message.answer("Этот IMEI уже есть в базе данных, попробуйте другой")
                 return
             await message.answer(f"IMEI принят для:\n<b>{item_name}</b>", parse_mode="HTML")
-        elif is_valid_jan(code):
+        elif is_valid_barcode(code):
             jan_exists = await session_without_commit.scalar(
                 select(DeviceInfo).where(DeviceInfo.jan == code)
             )

@@ -5,7 +5,7 @@ from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.context import FSMContext
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.bot.common.func import is_valid_imei, is_valid_jan
+from app.bot.common.func import is_valid_imei, is_valid_barcode
 from app.bot.common.kbds.markup.main_kb import MainKeyboard, create_scanner
 from app.db.models import DeviceInfo, RegisteredDevice
 from app.db.dao import DeviceInfoDAO, RegisteredDeviceDAO
@@ -48,7 +48,7 @@ async def input_keys(message: Message, state: FSMContext, session_without_commit
         if imea_exists:
             await message.answer('Этот IMEI уже есть в базе данных, попробуйте другой')
             return
-    elif is_valid_jan(code):
+    elif is_valid_barcode(code):
         current["jan"] = code
         jan_exists = await session_without_commit.scalar(
             select(DeviceInfo).where(DeviceInfo.jan == current["jan"])
